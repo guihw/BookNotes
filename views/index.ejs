@@ -1,0 +1,177 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anotações</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+    <header>
+    <h1>Anotações</h1>
+    <h3>Livros lidos</h3>
+    <p>Um pequeno resumo, mas com notas detalhadas para cada um.
+Esta página será atualizada constantemente à medida que eu ler mais, então adicione-a aos favoritos se quiser conferir novamente em alguns meses.</p>
+
+    <div class="ordenar" id="ordenar">
+        <p>Organizar Por</p>
+        <button class="btnOrdenar btnTitulo" onclick="ordenarPorTitulo()">Título</button>
+        <button class="btnOrdenar btnRecente" onclick="ordenarPorRecente()">Mais Novo</button>
+        <button class="btnOrdenar btnAntigo" onclick="ordenarPorAntigo()">Mais Antigo</button>
+    </div>
+
+    </header>
+    
+    <div class="btn-criar" id="btn-criar">
+        <button>Criar Anotação</button>  
+    </div>
+
+    <dialog class="dialogCriar">
+        <div class="popCriar">
+            <div class="popcontent">
+            <form action="/criar" method="POST">
+            <input type="text" name="isbn" class="digitarIsbn" placeholder="Digitar ISBN do livro..."> 
+            <textarea name="textoAnotacao" placeholder="Digitar anotação..."></textarea>
+            <div class="dialogBtns">
+            <button type="button" class="close">Cancelar</button>
+            <button type="submit">Salvar</button>
+            </div>
+            </form>
+            </div>
+        </div>
+    </dialog>
+
+    <main>
+        <% if(rows.length == 0){ %>
+                <h1>Vai ler um livro, jovem.</h1>
+                
+            <% } else if (rows.length > 2 && (ordenar === "0" || ordenar === "recente")) { %>
+
+        <section class="secaoTopo" id="secaoTopo">
+            <div class="maisRecente">
+            <h2>Mais Recente</h2>
+            <div class="card card-MaisRecente">
+                <div class="card-content">
+                <h3><%= rows[0].title %></h3>
+                <p><%= rows[0].note %></p>
+                <form action="/lerAnotacao" method="POST">
+                    <input type="hidden" name="lerTudo">
+                    <button type="submit">Ler Tudo</button>
+                </form>
+                </div>
+            </div>
+            </div>
+            
+
+            <div class="maisAntigo">
+                <h2>Mais Antiga</h2>
+                <div class="card card-MaisAntigo">
+                <div class="card-content">
+                <h3><%= rows[rows.length-1].title %></h3>
+                <p><%= rows[rows.length-1].note %></p>
+                <form action="/lerAnotacao" method="POST">
+                    <input type="hidden" name="lerTudo">
+                    <button type="submit">Ler Tudo</button>
+                </form>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <hr style="width: 100%;">
+        <% } %>
+
+        <section class="secaoPrincipal">
+        <% rows.forEach(element => { %>
+            <div class="cardAnotacao">
+            <hr>
+            <img src = "https://covers.openlibrary.org/b/isbn/<%= element.isbn %>-M.jpg" id="capaLivro" />
+            <div class="anotacao" id="#">
+                <div class="anotacao-conteudo">
+                <h3><%= element.title %></h3>
+                <p><%= element.note %></p>
+                </div>
+            </div>
+            <div class="btnRUD">
+                    <form action="/lerAnotacao" method="post" id="lerAnotacao">
+                        <input type="hidden" name="lerTudo">
+                        <button type="submit" class="">Ler Tudo</button>
+                    </form>
+
+                    <div class="icons">
+                        <button class="btnOrdenar" data-note="<%= element.note %>" data-isbn="<%= element.isbn %>" onclick="editar(this)">Editar</button>
+                        <button class="btnOrdenar" onclick="excluir(<%= element.id %>)">Excluir</button>
+                        <dialog class="dialogEditar">
+                            <div class="popCriar">
+                                <div class="popcontent">
+                                    <form action="/editar" method="POST">
+                                        <input type="hidden" name="id" value="<%= element.id %>">
+                                        <input type="text" name="isbn" class="digitarIsbn" readonly="readonly" placeholder="<%= element.isbn %>">
+                                        <textarea name="textoAnotacao" placeholder="Digitar anotação..."><%= element.note %></textarea>
+                                        <div class="dialogBtns">
+                                            <button type="button" class="close">Cancelar</button>
+                                            <button type="submit" class="save">Salvar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </dialog>
+                    </div>
+                </div>
+                </div>
+             <% }); %>
+        </section>
+        
+    </main>
+
+    <footer>
+        <h4>2025 Copyright</h4>
+    </footer>
+
+    <script>
+        const btnCriar = document.querySelector("div.btn-criar button");
+        const modal = document.querySelector(".dialogCriar");
+        const btnClose = document.querySelector(".dialogCriar form button.close");
+
+        const modalEditar = document.querySelector(".dialogEditar");
+        const btnCloseEditar = document.querySelector(".dialogEditar form button.close");
+
+        btnCriar.onclick = function(){
+            modal.showModal()
+        }
+
+        btnClose.onclick = function(){
+            modal.close();
+        }
+
+        function excluir(item){
+            console.log(item);
+            fetch(`/excluir`, {
+                method: "DELETE",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ id: item})
+            }).then(res => {
+                if (res.ok) location.reload();
+            });
+        }
+
+        function editar(currentNote){
+            modalEditar.showModal();
+            btnCloseEditar.onclick = function(){
+                modalEditar.close();
+            }
+        }
+
+        function ordenarPorTitulo() {
+            window.location.href = "/?ordenar=titulo";
+        }
+        function ordenarPorRecente() {
+            window.location.href = "/?ordenar=recente";
+        }
+        function ordenarPorAntigo() {
+            window.location.href = "/?ordenar=antigo";
+        }
+
+
+    </script>
+</body>
+</html>
